@@ -6,8 +6,8 @@ from vega_datasets import data
 def main_plot_1(merged_df):
 
     bars = alt.Chart(merged_df).mark_bar().encode(
-        alt.X("Relation:Q", title="Relation (shootings/State population)*10e-6", axis = alt.Axis(titleColor='black', labelColor='black')),
-        alt.Y("State:N", sort='-x', title="State", axis = alt.Axis(titleColor='black', labelColor='black')),
+        alt.X("Relation:Q", title="Relation (shootings/State population)*10e-6", axis = alt.Axis(titleColor='black', labelColor='black', titleFontSize = 20, labelFontSize=12)),
+        alt.Y("State:N", sort='-x', title="State", axis = alt.Axis(titleColor='black', labelColor='black', titleFontSize = 20, labelFontSize=12)),
         color=alt.condition(
             alt.datum.Top_10,  #looks if it accomplish the boolean condition
             alt.value('#1f78b4'),  # Color for top 10
@@ -17,15 +17,13 @@ def main_plot_1(merged_df):
         tooltip=['State', 'Relation']
     ).properties(title= "Mass shootings per Citizen by State (Scaled)")
    
-    text = bars.mark_text(
-        align='left',  
-        baseline='middle',  
-        dx=3,  
-        color='black' 
-    ).encode(
-        text=alt.Text('Relation:Q', format='.2f') 
-    )
-
+    text = alt.Chart(merged_df).mark_text(
+    align='left', baseline='middle', dx=3, color='black', fontSize=12    
+).encode(
+    alt.X("Relation:Q"),  
+    alt.Y("State:N", sort='-x'),  
+    text=alt.Text('Relation:Q', format='.2f')
+)
     chart = bars+ text
 
     st.altair_chart(chart)
@@ -111,7 +109,9 @@ def process_shootings_data(df):
     df['year_month'] = df["Incident Date"].dt.to_period('M')
     grouped_df = df.groupby('year_month').size().reset_index(name="count")
     grouped_df['year_month'] = grouped_df['year_month'].dt.to_timestamp()
+    grouped_df = grouped_df[1:-1] #deleting the first and last month that are incomplete
 
+    
     return grouped_df
 
 
@@ -120,26 +120,76 @@ def fourth_question(mass_shootings, school_incidents):
     """" Line chart to show the mass shootings envolved the last years in the USA"""
     
     shootings_count = process_shootings_data(mass_shootings)
-    school_count = process_shootings_data(school_incidents)
 
-    shootings_count["type"] = "Mass Shootings"
-    school_count["type"] = "School Incidents"
-    total_count = pd.concat([shootings_count, school_count])
+    max_value = shootings_count['count'].max()
+    min_value = shootings_count['count'].min()
+    mean_value = shootings_count['count'].mean().round(decimals = 2)
+
+    max_point = shootings_count[shootings_count['count'] == max_value]
+    min_point = shootings_count[shootings_count['count'] == min_value]
         
-    line_chart = alt.Chart(total_count).mark_line().encode(
-        alt.X('year_month:T', title = "Year - Month"),
-        alt.Y('count:Q', title = "Number of Incidents"),
-        alt.Color("type:N", title = "Incident Type", 
-                  scale = alt.Scale(
-                      domain = ['Mass Shootings', 'School Incidents'],
-                      range = ["#1f78b4", "#b2df8a"]
-                  ))
+    line_chart = alt.Chart(shootings_count).mark_line().encode(
+        alt.X('year_month:T', title = "Year - Month", axis=alt.Axis(labelColor ="black", labelAngle=45, format = "%b-%Y", titleColor = "black", titleFontSize = 20, labelFontSize=16)),
+        alt.Y('count:Q', title = "Number of mass shootings", axis = alt.Axis(labelColor = "black", titleColor = "black", titleFontSize = 20, labelFontSize=16)),
     ).properties(
-        title = "Mass shootings during the years",
-        width=900,
-        height=500
+        title = alt.TitleParams(
+            text = "Mass shootings during the last years in USA",
+            fontSize = 28,
+            anchor = "middle",
+            color = "black"),
+            width=1000,
+            height=500
     )
-    st.altair_chart(line_chart)
+    
+    max_point_chart = alt.Chart(max_point).mark_point(
+        size=170, color='#d95f02', filled = True
+    ).encode(
+        alt.X('year_month:T'),
+        alt.Y('count:Q')
+    )
+
+    min_point_chart = alt.Chart(min_point).mark_point(
+        size=170, color='#1b9e77', filled = True
+    ).encode(
+        alt.X('year_month:T'),
+        alt.Y('count:Q')
+    )
+
+    min_text = alt.Chart(min_point).mark_text(
+        align = 'left', dx = 12, dy = 15, fontSize = 14, color = '#1b9e77'
+    ).encode (
+        alt.X('year_month:T'),
+        alt.Y('count:Q'),
+        alt.Text('count:Q')
+    )
+
+    max_text = alt.Chart(max_point).mark_text(
+        align = 'left', dx = 7, dy = -10, fontSize = 14, color = '#d95f02'
+    ).encode (
+        alt.X('year_month:T'),
+        alt.Y('count:Q'),
+        alt.Text('count:Q')
+    )
+
+    mean_line = alt.Chart(shootings_count).mark_rule(
+        color = '#a6cee3'
+    ).encode(
+        alt.Y('mean_value:Q')
+    ).transform_calculate(mean_value=str(mean_value))
+
+    mean_text = alt.Chart(shootings_count).mark_text(
+        align = "left", dx = 250, dy = -10, color = '#a6cee3', size = 18
+    ).encode(
+        alt.Y('mean_value:Q'),
+        text = alt.value(f'Mean: {mean_value:.2f}')
+    ).transform_calculate(
+        mean_value = str(mean_value)
+    )
+
+    total_chart = line_chart + max_point_chart + min_point_chart + mean_line + mean_text + max_text + min_text
+
+    st.altair_chart(total_chart)
+
 
 
 
