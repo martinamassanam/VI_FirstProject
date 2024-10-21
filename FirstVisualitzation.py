@@ -3,6 +3,9 @@ import pandas as pd
 import altair as alt
 from vega_datasets import data
 
+
+
+############# QUESTION 1 #############
 def main_plot_1(merged_df):
 
     bars = alt.Chart(merged_df).mark_bar().encode(
@@ -68,40 +71,218 @@ def first_question(mass_shootings, state_pop):
 
     main_plot_1(merged_df)
 
-    """
-    complete_df = pd.DataFrame({
-        "State": list(total_count.keys()),
-        "Total Incidents": list(total_count.values()),
-        "Suspects Killed": list(suspects_killed.values()),
-        "Suspects Injured": list(suspects_injured.values())
-    })
-    complete_df['Suspects Killed per Incident'] = complete_df['Suspects Killed'] / complete_df['Total Incidents']
-    complete_df['Suspects Injured per Incident'] = complete_df['Suspects Injured'] / complete_df['Total Incidents']
-    
-    geom = alt.topo_feature(data.us_10m.url, 'states')
-    
-    slider = alt.binding_range(min=0, max=complete_df['Suspects Killed per Incident'].max(), step=0.01, name='Killed per Incident')
-    
-    selection = alt.selection_point(fields=['Suspects Killed per Incident'], bind=slider)
 
-    map_chart = alt.Chart(geom).transform_filter(selection).transform_lookup(
-        lookup = "id",
-        from_ = alt.LookupData(complete_df, 'State', ['Total Incidents', 'Suspects Killed', 'Suspects Injured', 'Suspects Killed per Incident'])
-    ).transform_calculate(
-        geometry = "datum.geom.geometry",
-        type = "datum.geom.type"
+    
+
+############# QUESTION 2 #############
+def second_question(mass_shootings):   
+    # Q2: How is the number of mass shootings per citizen distributed accross the different counties in the US?
+    #     And accross states?
+    
+    ############# SHOOTINGS PER STATES #############
+
+    #--------------- DATA PREPARATION ---------------#
+
+    state_shootings = {state: [0, 0, 0, 0, 0] for state in mass_shootings['State']}
+                            # ['FIPS', 'Shootings', 'Population', 'Suspects Injured', 'Suspects Killed']
+
+    # FIPS for states not appearing in the original dataset
+    state_shootings['Montana'] = [30, 0, 1122878, 0, 0]
+    state_shootings['Wyoming'] = [56, 0, 584057, 0, 0]
+    state_shootings['Vermont'] = [50, 0, 643077, 0, 0]
+    
+    for _, row in mass_shootings.iterrows():
+        current_state = row['State']
+        current_FIPS = row['FIPS']
+        current_population = row['Population']
+        suspects_injured = row['Suspects Injured']
+        suspects_killed = row['Suspects Killed']
+
+        state_shootings[current_state][0] = current_FIPS
+        state_shootings[current_state][1] += 1 # occurrence count
+        state_shootings[current_state][2] = current_population
+        state_shootings[current_state][3] += suspects_injured
+        state_shootings[current_state][4] += suspects_killed
+
+    state_shootings = pd.DataFrame.from_dict(state_shootings, orient='index',
+                                             columns=['FIPS', 'Total Shootings', 'Population', 'Suspects Injured', 'Suspects Killed'])
+    state_shootings['Shootings per 100K Habitants'] = state_shootings['Total Shootings'] / state_shootings['Population'] * 10**5 # 10**5 is a scaling factor
+    state_shootings['Suspects Injured per Shooting'] = state_shootings['Suspects Injured'] / state_shootings['Total Shootings']  
+    state_shootings['Suspects Killed per Shooting'] = state_shootings['Suspects Killed'] / state_shootings['Total Shootings']  
+    
+    # there's three states where Total Shootings = 0, for them, we have computed 0 / 0 when creating the last two columns
+    state_shootings.fillna(0, inplace=True)
+
+
+    #--------------- CHOROPLETH PLOTTING ---------------#
+
+    USA_states = alt.topo_feature(data.us_10m.url, 'states') 
+
+    state_shootings_map = alt.Chart(USA_states
+    ).transform_lookup(
+        lookup = 'id',
+        from_ = alt.LookupData(state_shootings, 'FIPS', list(state_shootings.columns)) 
     ).mark_geoshape(
     ).encode(
-        alt.Color("Suspects Killed per Incident:Q", scale = alt.Scale(scheme = "reds")),
-    ).add_params(selection
+        color = 'Shootings per 100K Habitants:Q'
     ).properties(
-        title = "Suspects Killed per Incident by State"
+        title = 'Distribution of shootings per 100K habitants, per state',
+        width = 900,
+        height = 700
+    ).project(
+        type = 'albersUsa'
     )
 
-    st.altair_chart(map_chart)
-    """
-    
+    st.altair_chart(state_shootings_map)
 
+
+
+    ############# SHOOTINGS PER COUNTIES #############
+
+    #--------------- DATA PREPARATION ---------------#
+
+    import geopandas as gpd
+    from shapely.geometry import Point
+
+    # to perform spatial join and intersect shooting coordinates with actual counties
+    geometry = [Point(lon_lat) for lon_lat in zip(mass_shootings['Longitude'], mass_shootings['Latitude'])]
+    mass_shootings_gdf = gpd.GeoDataFrame(mass_shootings[['State', 'FIPS']], geometry=geometry)
+
+    counties_gdf = gpd.read_file('counties.geojson')
+    counties_gdf = counties_gdf[['STATEFP', 'GEOID', 'NAME', 'geometry']] # reducing dimensionality
+
+    # swapping coordinates
+    from shapely.geometry import Polygon, MultiPolygon
+
+    def swap_coordinates(geometry):
+        if isinstance(geometry, Polygon): 
+            return Polygon([(lon, lat) for lat, lon in geometry.exterior.coords])
+        elif isinstance(geometry, MultiPolygon): 
+            return  MultiPolygon([Polygon([(lat, lon) for (lat, lon) in polygon.exterior.coords]) for polygon in geometry.geoms])
+
+    counties_gdf['geometry'] = counties_gdf['geometry'].apply(swap_coordinates) # swapping each row of the geometry column
+
+    # setting and ensuring the use of the same coordinate system 
+    mass_shootings_gdf.set_crs(epsg=4326, inplace=True)
+    counties_gdf = counties_gdf.to_crs(mass_shootings_gdf.crs)
+
+    # dropping Puerto Rico
+    counties_gdf = counties_gdf[counties_gdf['STATEFP'] != '72'] 
+
+    coordinates_w_counties = mass_shootings_gdf.sjoin(counties_gdf, how='right', predicate='within')
+    # 'how=right' to ensure we keep all counties and their FIPS, even if there's no coordinate data for them in the mass_shootings dataframe
+    coordinates_w_counties = coordinates_w_counties[['GEOID', 'NAME', 'STATEFP', 'FIPS']]
+    
+    ######## to compute average populations for counties in each state
+    county_counts = {fips: 0 for fips in counties_gdf['STATEFP']}
+        
+    # counting how many counties there are for each state
+    for _, row in counties_gdf.iterrows():
+        current_state_FIPS = row['STATEFP']
+        county_counts[current_state_FIPS] += 1
+
+    # grouping mass shootings per county
+    state_populations = {f: p for f,p in zip(state_shootings['FIPS'], state_shootings['Population'])}
+
+    county_shootings = {row['NAME']: [0, 0, 0, 0] for _, row in coordinates_w_counties.iterrows()}
+                                   # ['County FIPS', 'State FIPS', 'Shootings', 'State Population']
+    for _, row in coordinates_w_counties.iterrows():
+        current_county = row['NAME']
+        current_state_FIPS = row['STATEFP']
+        current_county_FIPS = row['GEOID']
+        current_state_population = state_populations[int(current_state_FIPS)]
+        
+        county_shootings[current_county][0] = current_county_FIPS 
+        county_shootings[current_county][1] = current_state_FIPS
+        
+        # we only want to sum occurrences if we have shooting data for it
+        if pd.notna(row['FIPS']):
+            county_shootings[current_county][2] += 1 # occurrence count
+        # if there's no data for this county in the original dataset, we keep the 'count' at 0
+
+        county_shootings[current_county][3] = current_state_population
+
+    county_shootings = pd.DataFrame.from_dict(county_shootings, orient='index',
+                                              columns=['County FIPS', 'State FIPS', 'Total Shootings', 'State Population'])
+
+    # computing an average population for each county based on their state_population/amount_of_counties
+    def compute_county_population(row):
+        current_state_FIPS = row['State FIPS']
+        return row['State Population'] / county_counts[current_state_FIPS]
+    
+    county_shootings['County Population'] = county_shootings.apply(compute_county_population, axis='columns')
+
+    county_shootings['Shootings per 10K habitants'] = county_shootings['Total Shootings'] * 1 / county_shootings['County Population'] * 10**4 # 10**4 is a scaling factor
+    county_shootings['County FIPS'] = county_shootings['County FIPS'].astype(int)
+
+    unemployment_df = data.unemployment() # contains the FIPS inside the USA area in the column 'id'
+    FIPS_intersection = set(county_shootings['County FIPS']).intersection(set(unemployment_df['id']))
+    print(*unemployment_df['id'])
+
+    # keeping only the counties with FIPS inside the USA area
+    county_shootings = county_shootings[county_shootings['County FIPS'].isin(FIPS_intersection)]
+
+    # adding the remaining rows of 'unemployment_df['id']' to have all plotable county FIPS
+    for f in unemployment_df['id']:
+        if f not in FIPS_intersection:  
+            num_of_rows = county_shootings.shape[0] 
+            county_shootings.loc[num_of_rows] = [f, 0, 0, 0, 0, 0]
+
+
+    #--------------- CHOROPLETH PLOTTING ---------------#
+
+    USA_counties = alt.topo_feature(data.us_10m.url, 'counties')
+    
+    county_shootings_map = alt.Chart(USA_counties
+    ).transform_lookup(
+        lookup = 'id',
+        from_ = alt.LookupData(county_shootings, 'County FIPS', list(county_shootings.columns)) 
+    ).mark_geoshape(
+    ).encode(
+        color = 'Shootings per 10K habitants:Q'
+    ).properties(
+        title = 'Distribution of shootings per 10K habitants, per county',
+        width = 900,
+        height = 700
+    ).project(
+        type = 'albersUsa'
+    )
+    
+    st.altair_chart(county_shootings_map)
+
+
+
+    ############# SUSPECTS KILLED/INJURED PER STATES #############
+
+    #--------------- CHOROPLETH PLOTTING ---------------#
+
+    variable_list = ['Suspects Injured per Shooting', 'Suspects Killed per Shooting']
+
+    suspects_harmed_map = alt.Chart(USA_states
+    ).transform_lookup(
+        lookup = 'id',
+        from_ = alt.LookupData(state_shootings, 'FIPS', variable_list) 
+    ).mark_geoshape(
+    ).encode(
+        alt.Color(alt.repeat('row'), type='quantitative').scale(scheme='lighttealblue')
+    ).properties(
+        width = 900,
+        height = 700
+    ).project(
+        type = 'albersUsa'
+    ).repeat(
+        row = variable_list
+    ).resolve_scale(
+        color = 'independent'
+    )
+
+    st.markdown('### Suspects harmed per shooting, per state')
+    st.altair_chart(suspects_harmed_map)
+
+
+
+
+############# QUESTION 4 #############
 def process_shootings_data(df):
     """Count all the shootings or incidents from the same month"""
 
@@ -113,7 +294,6 @@ def process_shootings_data(df):
 
     
     return grouped_df
-
 
 
 def fourth_question(mass_shootings, school_incidents):
@@ -137,7 +317,7 @@ def fourth_question(mass_shootings, school_incidents):
             fontSize = 28,
             anchor = "middle",
             color = "black"),
-            width=1000,
+            width=700,
             height=500
     )
     
@@ -200,18 +380,23 @@ def main():
     state_pop = pd.read_csv("state-pop-clean.csv")
     school_incidents = pd.read_csv("School-incidents.csv")
 
-    st.title("Mass shootings analysis")
+    st.title('Mass shootings analysis')
+    st.markdown('## First Question')
     first_question(mass_shootings, state_pop)
 
+    st.markdown('---')
+    st.markdown('## Second Question')
+    second_question(mass_shootings)
+
+    st.markdown('---')
+    st.markdown('## Third Question')
+
+    st.markdown('---')
+    st.markdown('## Fourth Question')
     fourth_question(mass_shootings, school_incidents)
 
 if __name__ =="__main__":
     main()
     
 
-
-
-# Q2: Mapa per states (coropleth, gradient) i per counties 
-
 # Q3: Mapa de correlacions (semblant al de les diapos de múltiples mapes de US)
-
