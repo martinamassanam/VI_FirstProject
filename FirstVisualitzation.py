@@ -376,9 +376,9 @@ def fourth_question(mass_shootings, school_incidents):
     
 
 def main():
-    mass_shootings = pd.read_csv('Mass_shooting.csv')
-    state_pop = pd.read_csv("state-pop-clean.csv")
-    school_incidents = pd.read_csv("School-incidents.csv")
+    mass_shootings = pd.read_csv('MassShootings.csv')
+    state_pop = pd.read_csv('StatePopClean.csv')
+    school_incidents = pd.read_csv('SchoolIncidents.csv')
 
     st.title('Mass shootings analysis')
     st.markdown('## First Question')
