@@ -9,27 +9,34 @@ from vega_datasets import data
 def main_plot_1(merged_df):
 
     bars = alt.Chart(merged_df).mark_bar().encode(
-        alt.X("Relation:Q", title="Relation (shootings/State population)*10e-6", axis = alt.Axis(titleColor='black', labelColor='black', titleFontSize = 20, labelFontSize=12)),
-        alt.Y("State:N", sort='-x', title="State", axis = alt.Axis(titleColor='black', labelColor='black', titleFontSize = 20, labelFontSize=12)),
+        alt.X("Relation:Q", title="Shootings per million habitants", axis = alt.Axis(titleColor='black', labelColor='black')),
+        alt.Y("State:N", sort='-x', title="State", axis = alt.Axis(titleColor='black', labelColor='black')),
         color=alt.condition(
-            alt.datum.Top_10,  #looks if it accomplish the boolean condition
+            alt.datum.Top_10,  # looks if it accomplish the boolean condition
             alt.value('#1f78b4'),  # Color for top 10
             alt.value('#b2b2b2')   # Color for the rest
         ),
         order = alt.Order('Relation', sort = 'descending'),  
         tooltip=['State', 'Relation']
-    ).properties(title= "Mass shootings per Citizen by State (Scaled)")
-   
+    ).properties(title= {
+                    "text": "Mass shootings per Citizen by State (Scaled)",
+                    "subtitle": "The Top 10 states are highlighted accordingly."
+                    }
+    )
+    
+
     text = alt.Chart(merged_df).mark_text(
     align='left', baseline='middle', dx=3, color='black', fontSize=12    
-).encode(
+    ).encode(
     alt.X("Relation:Q"),  
     alt.Y("State:N", sort='-x'),  
     text=alt.Text('Relation:Q', format='.2f')
-)
-    chart = bars+ text
+    )
 
-    st.altair_chart(chart)
+    chart = bars + text
+    chart.display()
+
+    #altair_chart(chart)
 
 
 def first_question(mass_shootings, state_pop):   
