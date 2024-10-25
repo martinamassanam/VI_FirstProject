@@ -9,34 +9,27 @@ from vega_datasets import data
 def main_plot_1(merged_df):
 
     bars = alt.Chart(merged_df).mark_bar().encode(
-        alt.X("Relation:Q", title="Shootings per million habitants", axis = alt.Axis(titleColor='black', labelColor='black')),
-        alt.Y("State:N", sort='-x', title="State", axis = alt.Axis(titleColor='black', labelColor='black')),
+        alt.X("Relation:Q", title="Relation (shootings/State population)*10e-6", axis = alt.Axis(titleColor='black', labelColor='black', titleFontSize = 20, labelFontSize=12)),
+        alt.Y("State:N", sort='-x', title="State", axis = alt.Axis(titleColor='black', labelColor='black', titleFontSize = 20, labelFontSize=12)),
         color=alt.condition(
-            alt.datum.Top_10,  # looks if it accomplish the boolean condition
+            alt.datum.Top_10,  #looks if it accomplish the boolean condition
             alt.value('#1f78b4'),  # Color for top 10
             alt.value('#b2b2b2')   # Color for the rest
         ),
         order = alt.Order('Relation', sort = 'descending'),  
         tooltip=['State', 'Relation']
-    ).properties(title= {
-                    "text": "Mass shootings per Citizen by State (Scaled)",
-                    "subtitle": "The Top 10 states are highlighted accordingly."
-                    }
-    )
-    
-
+    ).properties(title= "Mass shootings per Citizen by State (Scaled)")
+   
     text = alt.Chart(merged_df).mark_text(
     align='left', baseline='middle', dx=3, color='black', fontSize=12    
-    ).encode(
+).encode(
     alt.X("Relation:Q"),  
     alt.Y("State:N", sort='-x'),  
     text=alt.Text('Relation:Q', format='.2f')
-    )
+)
+    chart = bars+ text
 
-    chart = bars + text
-    chart.display()
-
-    #altair_chart(chart)
+    st.altair_chart(chart)
 
 
 def first_question(mass_shootings, state_pop):   
@@ -119,6 +112,7 @@ def second_question(mass_shootings):
     
     # there's three states where Total Shootings = 0, for them, we have computed 0 / 0 when creating the last two columns
     state_shootings.fillna(0, inplace=True)
+    print(max(state_shootings['Shootings per 100K Habitants']))
 
 
     #--------------- CHOROPLETH PLOTTING ---------------#
@@ -289,6 +283,36 @@ def second_question(mass_shootings):
 
 
 
+############# QUESTION 3 #############
+def third_question(mass_shootings, school_incidents):
+    """" Line chart to show the mass shootings envolved the last years in the USA"""
+    
+    shootings_count = process_shootings_data(mass_shootings)
+    school_count = process_shootings_data(school_incidents)
+
+    shootings_count["type"] = "Mass Shootings"
+    school_count["type"] = "School Incidents"
+    total_count = pd.concat([shootings_count, school_count])
+        
+    line_chart = alt.Chart(total_count).mark_line().encode(
+        alt.X('year_month:T', title = "Year - Month"),
+        alt.Y('count:Q', title = "Number of Incidents"),
+        alt.Color("type:N", title = "Incident Type", 
+                  scale = alt.Scale(
+                      domain = ['Mass Shootings', 'School Incidents'],
+                      range = ["#1f78b4", "#b2df8a"]
+                  ))
+    #).transform_filter(
+        #alt.FieldOneOfPredicate(field='year_month', oneOf=[1900, 1950, 2000])
+    ).properties(
+        title = "Mass shootings during the years",
+        width=900,
+        height=500
+    )
+    st.altair_chart(line_chart)
+
+
+
 ############# QUESTION 4 #############
 def process_shootings_data(df):
     """Count all the shootings or incidents from the same month"""
@@ -383,9 +407,9 @@ def fourth_question(mass_shootings, school_incidents):
     
 
 def main():
-    mass_shootings = pd.read_csv('MassShootings.csv')
-    state_pop = pd.read_csv('StatePopClean.csv')
-    school_incidents = pd.read_csv('SchoolIncidents.csv')
+    mass_shootings = pd.read_csv('Mass_shooting.csv')
+    state_pop = pd.read_csv("state-pop-clean.csv")
+    school_incidents = pd.read_csv("School-incidents.csv")
 
     st.title('Mass shootings analysis')
     st.markdown('## First Question')
