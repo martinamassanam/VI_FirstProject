@@ -285,7 +285,8 @@ def second_question(mass_shootings):
 
 ############# QUESTION 3 #############
 def third_question(mass_shootings, school_incidents):
-    """" Line chart to show the mass shootings envolved the last years in the USA"""
+    # Q3: Correlació entre mass_shootings i school_incidents
+    # Scatterplot + Linechart 
     
     shootings_count = process_shootings_data(mass_shootings)
     school_count = process_shootings_data(school_incidents)
@@ -302,13 +303,14 @@ def third_question(mass_shootings, school_incidents):
                       domain = ['Mass Shootings', 'School Incidents'],
                       range = ["#1f78b4", "#b2df8a"]
                   ))
-    #).transform_filter(
-        #alt.FieldOneOfPredicate(field='year_month', oneOf=[1900, 1950, 2000])
+    ).transform_filter(
+        alt.FieldOneOfPredicate(field='year_month', oneOf=[1900, 1950, 2000])
     ).properties(
         title = "Mass shootings during the years",
         width=900,
         height=500
     )
+
     st.altair_chart(line_chart)
 
 
@@ -421,6 +423,7 @@ def main():
 
     st.markdown('---')
     st.markdown('## Third Question')
+    third_question(mass_shootings, school_incidents)
 
     st.markdown('---')
     st.markdown('## Fourth Question')
@@ -429,5 +432,3 @@ def main():
 if __name__ =="__main__":
     main()
     
-
-# Q3: Mapa de correlacions (semblant al de les diapos de múltiples mapes de US)
