@@ -454,6 +454,10 @@ def main():
     school_incidents = pd.read_csv('SchoolIncidents.csv')
 
     st.set_page_config(layout = 'wide')
+    st.title('Analysis of Mass Shootings in the US')
+    st.markdown('**Authors:** Raquel Jolis Carné and Martina Massana Massip')
+    st.divider()
+
     first_question(mass_shootings)
     second_question(mass_shootings, county_population, counties_gdf)
     fourth_question(mass_shootings, school_incidents)
