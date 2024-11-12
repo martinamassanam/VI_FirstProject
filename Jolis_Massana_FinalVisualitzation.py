@@ -12,12 +12,9 @@ from shapely.geometry import Polygon, MultiPolygon
 
 ############# QUESTION 1 #############
 def first_question(mass_shootings):   
-    # Q1: What are the states with large number of mass shootings per citizen?
-    # Barchart vertical (marcant TOP10) + Gràfic extra per la resta de variables 
+    """Bar chart displaying the quantity of mass shootings by state, with emphasis on the top 10 states."""# Q1: What are the states with large number of mass shootings per citizen?
     
-    ############# TOP 10 SHOOTINGS PER STATES #############
-
-    #--------------- DATA PREPARATION ---------------#
+        #--------------- DATA PREPARATION ---------------#
 
     state_shootings = {state: [0, 0] for state in set(mass_shootings['State'])}
                             # ['Shootings', 'Population']
@@ -52,12 +49,16 @@ def first_question(mass_shootings):
         alt.Y('State:N', sort='-x', axis = alt.Axis(titleColor = 'black', labelColor = 'black', titleFontSize = 14, labelFontSize = 12)),
         color = alt.condition(
             alt.datum.Top_10,      
-            alt.value('#255075'),  # color for top 10
+            alt.value('#1f78b4'),  # color for top 10
             alt.value('#b2b2b2')   # color for the rest
         ),
         order = alt.Order('Shootings per 1M Habitants', sort = 'descending'),  
         tooltip = ['State', 'Shootings per 1M Habitants']
-    ).properties(title= 'Mass shootings per million citizens by State')
+    ).properties(title= alt.TitleParams(
+            text = 'Mass shootings per million citizens by State',
+            fontSize = 24,
+            color = 'black')
+    )
    
     shootings_text = alt.Chart(state_shootings).mark_text(
         align = 'left', baseline = 'middle', dx = 3, color = 'black', fontSize = 12    
@@ -129,10 +130,14 @@ def second_question(mass_shootings, county_population, counties_gdf):
         from_ = alt.LookupData(shootings_notcolumbia, 'FIPS', list(shootings_notcolumbia.columns)) 
     ).mark_geoshape(stroke='darkgray'
     ).encode(
-        color = 'Shootings per 1M Habitants:Q',
+        color = alt.Color('Shootings per 1M Habitants:Q', legend=alt.Legend(title="Shootings per 1M Habitants", titleColor = "black", labelColor="black", labelFontSize=12)
+        ),
         tooltip = ['State:N', 'Shootings per 1M Habitants:Q']
     ).properties(
-        title = 'Distribution of shootings per million habitants, by state',
+        title = alt.TitleParams(
+            text = 'Distribution of shootings per million habitants, by state',
+            fontSize = 24,
+            color = 'black'),
         width = 600,
         height = 400
     ).project(
@@ -152,10 +157,10 @@ def second_question(mass_shootings, county_population, counties_gdf):
         size = 50,           
         opacity = 0.7
     ).encode(
-        color = alt.Color('State:N', scale=alt.Scale(scheme = 'reds')),
+        color = alt.Color('State:N', scale=alt.Scale(scheme = 'reds'), legend=alt.Legend(labelColor='black', titleColor='black')),
         longitude = 'Longitude:Q',
         latitude = 'Latitude:Q',
-        tooltip = ['Shootings per 1M Habitants:Q']
+        tooltip = ['State:N', 'Shootings per 1M Habitants:Q']
     ).properties(
         width = 600,
         height = 400
@@ -253,10 +258,16 @@ def second_question(mass_shootings, county_population, counties_gdf):
         lookup = 'id',
         from_ = alt.LookupData(county_shootings, 'County FIPS', list(county_shootings.columns)) 
     ).mark_geoshape().encode(
-        color = 'Shootings per 100K habitants:Q',
+        color = alt.Color('Shootings per 100K habitants:Q', legend=alt.Legend(
+                title="Shootings per 100K habitants",
+                titleColor='black', 
+                labelColor='black')),
         tooltip = ['County:N', 'Shootings per 100K habitants:Q']
     ).properties(
-        title = 'Distribution of shootings per 100K habitants, by county',
+        title = alt.TitleParams(
+            text = 'Distribution of shootings per 100k habitants, by country',
+            fontSize = 24,
+            color = 'black'),
         width = 600,
         height = 400
     ).project(
@@ -285,10 +296,19 @@ def second_question(mass_shootings, county_population, counties_gdf):
         stroke='lightgray',
         fill = 'transparent'
     ).encode(
-        color = 'Shootings per 100K habitants:Q',
+        color = alt.Color(
+            'Shootings per 100K habitants:Q', 
+            legend=alt.Legend(
+                title="Shootings per 100K habitants",
+                titleColor='black', 
+                labelColor='black')
+        ),
         tooltip = ['County:N', 'Shootings per 100K habitants:Q'],
     ).properties(
-        title = 'Distribution of shootings per 100K habitants, by county',
+        title = alt.TitleParams(
+            text = 'Distribution of shootings per 100k habitants, by county',
+            fontSize = 24,
+            color = 'black'),
         width = 600,
         height = 400
     ).project(
@@ -317,10 +337,16 @@ def second_question(mass_shootings, county_population, counties_gdf):
         from_ = alt.LookupData(state_shootings, 'FIPS', list(state_shootings.columns)) 
     ).mark_geoshape(stroke='darkgray'
     ).encode(
-        color = alt.Color('% of Suspects Injured:Q').scale(scheme = 'lighttealblue'),
+        color = alt.Color('% of Suspects Injured:Q', legend=alt.Legend(
+                title="Shootings per 100K habitants",
+                titleColor='black', 
+                labelColor='black')).scale(scheme = 'lighttealblue'),
         tooltip = ['State:N', '% of Suspects Injured:Q']
     ).properties(
-        title = 'Percentage of Suspects injured per shooting, by state',
+        title = alt.TitleParams(
+            text = 'Percentage of Suspects Injured per shooting, by state',
+            fontSize = 24,
+            color = 'black'),
         width = 600,
         height = 400
     ).project(
@@ -334,10 +360,16 @@ def second_question(mass_shootings, county_population, counties_gdf):
         from_ = alt.LookupData(state_shootings, 'FIPS', list(state_shootings.columns)) 
     ).mark_geoshape(stroke='darkgray'
     ).encode(
-        color = alt.Color('% of Suspects Killed:Q').scale(scheme = 'lighttealblue'),
+        color = alt.Color('% of Suspects Killed:Q', legend=alt.Legend(
+                title="Shootings per 100K habitants",
+                titleColor='black', 
+                labelColor='black')).scale(scheme = 'lighttealblue'),
         tooltip = ['State:N', '% of Suspects Killed:Q']
     ).properties(
-        title = 'Percentage of Suspects killed per shooting, by state',
+        title = alt.TitleParams(
+            text = 'Percentage of suspects killed per shooting, by state',
+            fontSize = 24,
+            color = 'black'),
         width = 600,
         height = 400
     ).project(
@@ -353,14 +385,52 @@ def second_question(mass_shootings, county_population, counties_gdf):
 
 ############# QUESTION 3 #############
 def third_question(mass_shootings, school_incidents):
-    # Q3: Correlació entre mass_shootings i school_incidents
-    # Scatterplot + Linechart 
+    """Scatter plot for the quantity of mass_shootings and school incidents per state"""
     
-    ... 
+    #--------------- DATA PREPARATION ---------------#
+    mass_shootings['Incident Date'] = pd.to_datetime(mass_shootings['Incident Date'])
+    mass_shootings_reduced = mass_shootings[mass_shootings['Incident Date'] > '2022-11-01']
+
+
+    shootings_count = mass_shootings_reduced.groupby('State').size().reset_index(name="Shootings_count")
+    school_count = school_incidents.groupby('State').size().reset_index(name="School_count")
+    total_count = pd.merge(shootings_count, school_count, on='State', how='outer')
+    total_count = total_count.fillna(0)
+
+    total_count = total_count.merge(mass_shootings[['State','Population']], on = "State", how = "left")
+    total_count.loc[total_count['State'] == "Wyoming", 'Population'] = 584057.0
+    total_count.loc[total_count['State'] == "Montana", 'Population'] = 1122878.0
+    total_count.loc[total_count['State'] == "Vermont", 'Population'] = 643077.0
+
+    total_count['Ratio_shootings'] = (total_count['Shootings_count']/total_count['Population'])*10**6
+    total_count['Ratio_schools'] = (total_count['School_count']/total_count['Population'])*10**6
+    
+
+    #--------------- SCATTER PLOT PLOTTING ---------------#
+    scatter_plot = alt.Chart(total_count).mark_circle(color='#1f78b4').encode(
+        alt.X('Ratio_shootings:Q', title = "Mass Shootings per million inhabitants", axis = alt.Axis(titleColor = 'black', labelColor = 'black', titleFontSize = 14, labelFontSize = 12)),
+        alt.Y('Ratio_schools:Q', title = "School Incidents per million inhabitants", axis = alt.Axis(titleColor = 'black', labelColor = 'black', titleFontSize = 14, labelFontSize = 12)),
+        tooltip=['State', 'Ratio_shootings', 'Ratio_schools']
+    ).properties(
+        title = alt.TitleParams(
+            text = 'Relationship Between Mass Shootings and School Incidents',
+            fontSize = 24,
+            color = 'black'),
+        width=600,
+        height=400
+    )
+    
+    linear_regression = scatter_plot.transform_regression( 
+        'Ratio_shootings', 
+        'Ratio_schools' 
+    ).mark_line(color ='#a6cee3')
+
+    return scatter_plot + linear_regression
+
 
 
 ############# QUESTION 4 #############
-def fourth_question(mass_shootings, school_incidents):
+def fourth_question(mass_shootings, school_incidents, regression_plot):
     """" Line chart to show the mass shootings envolved the last years in the USA"""
 
     #--------------- DATA PREPARATION ---------------#
@@ -390,7 +460,7 @@ def fourth_question(mass_shootings, school_incidents):
     ).properties(
         title = alt.TitleParams(
             text = 'Mass shootings during the last four years in the USA',
-            fontSize = 16,
+            fontSize = 24,
             color = 'black'),
             width = 600,
             height = 400
@@ -433,7 +503,7 @@ def fourth_question(mass_shootings, school_incidents):
     ).transform_calculate(mean_value=str(mean_value))
 
     mean_text = alt.Chart(total_shootings).mark_text(
-        align = "left", dx = 250, dy = -10, color = '#a6cee3', size = 18
+        align = "left", dx = 200, dy = -10, color = '#a6cee3', size = 18
     ).encode(
         alt.Y('mean_value:Q'),
         text = alt.value(f'Mean: {mean_value:.2f}')
@@ -442,7 +512,13 @@ def fourth_question(mass_shootings, school_incidents):
     )
 
     complete_chart = shootings_linechart + max_point_chart + min_point_chart + mean_line + mean_text + max_text + min_text
-    st.altair_chart(complete_chart)
+
+    relation_plot, line_plot = st.columns(2)
+    with relation_plot: 
+        st.altair_chart(regression_plot)
+    with line_plot:
+        st.altair_chart(complete_chart)
+    
 
 
 
@@ -460,7 +536,8 @@ def main():
 
     first_question(mass_shootings)
     second_question(mass_shootings, county_population, counties_gdf)
-    fourth_question(mass_shootings, school_incidents)
+    regression_plot = third_question(mass_shootings, school_incidents)
+    fourth_question(mass_shootings, school_incidents, regression_plot)
 
 if __name__ =="__main__":
     main()
