@@ -402,15 +402,15 @@ def third_question(mass_shootings, school_incidents):
     total_count.loc[total_count['State'] == "Montana", 'Population'] = 1122878.0
     total_count.loc[total_count['State'] == "Vermont", 'Population'] = 643077.0
 
-    total_count['Ratio_shootings'] = (total_count['Shootings_count']/total_count['Population'])*10**6
-    total_count['Ratio_schools'] = (total_count['School_count']/total_count['Population'])*10**6
+    total_count['Ratio Mass Shootings'] = (total_count['Shootings_count']/total_count['Population'])*10**6
+    total_count['Ratio School Incidents'] = (total_count['School_count']/total_count['Population'])*10**6
     
 
     #--------------- SCATTER PLOT PLOTTING ---------------#
     scatter_plot = alt.Chart(total_count).mark_circle(color='#1f78b4').encode(
-        alt.X('Ratio_shootings:Q', title = "Mass Shootings per million inhabitants", axis = alt.Axis(titleColor = 'black', labelColor = 'black', titleFontSize = 14, labelFontSize = 12)),
-        alt.Y('Ratio_schools:Q', title = "School Incidents per million inhabitants", axis = alt.Axis(titleColor = 'black', labelColor = 'black', titleFontSize = 14, labelFontSize = 12)),
-        tooltip=['State', 'Ratio_shootings', 'Ratio_schools']
+        alt.X('Ratio Mass Shootings:Q', title = "Mass Shootings per million citizens", axis = alt.Axis(titleColor = 'black', labelColor = 'black', titleFontSize = 14, labelFontSize = 12)),
+        alt.Y('Ratio School Incidents:Q', title = "School Incidents per million citizens", axis = alt.Axis(titleColor = 'black', labelColor = 'black', titleFontSize = 14, labelFontSize = 12)),
+        tooltip=['State', 'Ratio Mass Shootings', 'Ratio School Incidents']
     ).properties(
         title = alt.TitleParams(
             text = 'Relationship Between Mass Shootings and School Incidents',
@@ -421,8 +421,8 @@ def third_question(mass_shootings, school_incidents):
     )
     
     linear_regression = scatter_plot.transform_regression( 
-        'Ratio_shootings', 
-        'Ratio_schools' 
+        'Ratio Mass Shootings', 
+        'Ratio School Incidents' 
     ).mark_line(color ='#a6cee3')
 
     return scatter_plot + linear_regression
