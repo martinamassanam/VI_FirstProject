@@ -47,29 +47,36 @@ def first_question(mass_shootings):
     shootings_bars = alt.Chart(state_shootings).mark_bar().encode(
         alt.X('Shootings per 1M Habitants:Q', axis = alt.Axis(titleColor = 'black', labelColor = 'black', titleFontSize = 14, labelFontSize = 12)),
         alt.Y('State:N', sort='-x', axis = alt.Axis(titleColor = 'black', labelColor = 'black', titleFontSize = 14, labelFontSize = 12)),
-        color = alt.condition(
-            alt.datum.Top_10,      
-            alt.value('#1f78b4'),  # color for top 10
-            alt.value('#b2b2b2')   # color for the rest
-        ),
-        order = alt.Order('Shootings per 1M Habitants', sort = 'descending'),  
-        tooltip = ['State', 'Shootings per 1M Habitants']
-    ).properties(title= alt.TitleParams(
-            text = 'Mass shootings per million citizens by State',
-            fontSize = 24,
-            color = 'black')
+        color = alt.value('#1f78b4'),
+        order = alt.Order('Shootings per 1M Habitants', sort = 'descending')
+    ).transform_filter(
+        alt.datum.Top_10 == True
+    ).properties(title = alt.TitleParams(
+        text = 'Top 10 States with most mass shootings per 1M habitants',
+        fontSize = 18,
+        color = 'black',
+        offset = 12.5)
+    ).properties(
+        width = 600,
+        height = 400
     )
-   
+
     shootings_text = alt.Chart(state_shootings).mark_text(
-        align = 'left', baseline = 'middle', dx = 3, color = 'black', fontSize = 12    
+        align = 'left', baseline = 'middle', dx = 3, color = 'black', fontSize = 12
     ).encode(
-        alt.X('Shootings per 1M Habitants:Q'),  
-        alt.Y('State:N', sort='-x'),  
+        alt.X('Shootings per 1M Habitants:Q'),
+        alt.Y('State:N', sort='-x'),
         alt.Text('Shootings per 1M Habitants:Q', format='.2f')
+    ).transform_filter(
+        alt.datum.Top_10 == True
+    ).properties(
+        width = 600,
+        height = 400
     )
+
+    Q1_barchart_final = shootings_bars + shootings_text
     
-    shootings_barchart = shootings_bars + shootings_text
-    st.altair_chart(shootings_barchart)
+    return Q1_barchart_final
 
 
 
@@ -122,21 +129,29 @@ def second_question(mass_shootings, county_population, counties_gdf):
 
     #--------------- CHOROPLETH PLOTTING ---------------#
 
-    USA_states = alt.topo_feature(data.us_10m.url, 'states') 
+    USA_states = alt.topo_feature(data.us_10m.url, 'states')
 
     state_shootings_map = alt.Chart(USA_states
     ).transform_lookup(
         lookup = 'id',
-        from_ = alt.LookupData(shootings_notcolumbia, 'FIPS', list(shootings_notcolumbia.columns)) 
+        from_ = alt.LookupData(shootings_notcolumbia, 'FIPS', list(shootings_notcolumbia.columns))
     ).mark_geoshape(stroke='darkgray'
     ).encode(
-        color = alt.Color('Shootings per 1M Habitants:Q', legend=alt.Legend(title="Shootings per 1M Habitants", titleColor = "black", labelColor="black", labelFontSize=12)
+        color=alt.Color(
+            'Shootings per 1M Habitants:Q',
+            legend=alt.Legend(
+                title='Shootings per 1M Habitants',
+                titleColor='black',
+                labelColor='black',
+                orient='bottom'
+            ),
+            scale=alt.Scale(scheme='lighttealblue')
         ),
         tooltip = ['State:N', 'Shootings per 1M Habitants:Q']
     ).properties(
         title = alt.TitleParams(
             text = 'Distribution of shootings per million habitants, by state',
-            fontSize = 24,
+            fontSize = 18,
             color = 'black'),
         width = 600,
         height = 400
@@ -147,17 +162,18 @@ def second_question(mass_shootings, county_population, counties_gdf):
 
     # to highlight the District of Columbia in the map
     columbia_data = pd.DataFrame({
-        'Latitude': [38.89511],     
-        'Longitude': [-77.03637],   
+        'Latitude': [38.89511],
+        'Longitude': [-77.03637],
         'State': ['District of Columbia'],
         'Shootings per 1M Habitants': [state_shootings[state_shootings['FIPS'] == 11]['Shootings per 1M Habitants'].iloc[0]]
     })
 
     columbia_zoom = alt.Chart(columbia_data).mark_circle(
-        size = 50,           
+        size = 50,
         opacity = 0.7
     ).encode(
-        color = alt.Color('State:N', scale=alt.Scale(scheme = 'reds'), legend=alt.Legend(labelColor='black', titleColor='black')),
+        color = alt.Color('State:N', scale=alt.Scale(scheme = 'reds'),
+                        legend=alt.Legend(labelColor='black', titleColor='black', orient='bottom')),
         longitude = 'Longitude:Q',
         latitude = 'Latitude:Q',
         tooltip = ['State:N', 'Shootings per 1M Habitants:Q']
@@ -165,9 +181,8 @@ def second_question(mass_shootings, county_population, counties_gdf):
         width = 600,
         height = 400
     )
-    
-    state_shootings_complete = state_shootings_map + columbia_zoom
 
+    Q2_state_map_final = state_shootings_map + columbia_zoom
 
 
     ############# SHOOTINGS PER COUNTIES #############
@@ -252,21 +267,27 @@ def second_question(mass_shootings, county_population, counties_gdf):
     #--------------- CHOROPLETH PLOTTING ---------------#
 
     USA_counties = alt.topo_feature(data.us_10m.url, 'counties')
-    
+
     county_shootings_map = alt.Chart(USA_counties
     ).transform_lookup(
         lookup = 'id',
-        from_ = alt.LookupData(county_shootings, 'County FIPS', list(county_shootings.columns)) 
+        from_ = alt.LookupData(county_shootings, 'County FIPS', list(county_shootings.columns))
     ).mark_geoshape().encode(
-        color = alt.Color('Shootings per 100K habitants:Q', legend=alt.Legend(
-                title="Shootings per 100K habitants",
-                titleColor='black', 
-                labelColor='black')),
+        color = alt.Color(
+            'Shootings per 100K habitants:Q',
+            legend=alt.Legend(
+                title='Shootings per 100K habitants',
+                titleColor='black',
+                labelColor='black',
+                orient='bottom'
+            ),
+            scale=alt.Scale(scheme='lighttealblue')
+        ),
         tooltip = ['County:N', 'Shootings per 100K habitants:Q']
     ).properties(
         title = alt.TitleParams(
-            text = 'Distribution of shootings per 100k habitants, by country',
-            fontSize = 24,
+            text = 'Distribution of shootings per 100k habitants, by county',
+            fontSize = 18,
             color = 'black'),
         width = 600,
         height = 400
@@ -277,7 +298,7 @@ def second_question(mass_shootings, county_population, counties_gdf):
     state_shape_overlay = alt.Chart(USA_states
     ).transform_lookup(
         lookup = 'id',
-        from_ = alt.LookupData(state_shootings, 'FIPS', list(state_shootings.columns)) 
+        from_ = alt.LookupData(state_shootings, 'FIPS', list(state_shootings.columns))
     ).mark_geoshape(
         stroke = 'gray',
         fill = 'transparent'
@@ -291,23 +312,23 @@ def second_question(mass_shootings, county_population, counties_gdf):
     county_shootings_overlay = alt.Chart(USA_counties
     ).transform_lookup(
         lookup = 'id',
-        from_ = alt.LookupData(county_shootings, 'County FIPS', list(county_shootings.columns)) 
+        from_ = alt.LookupData(county_shootings, 'County FIPS', list(county_shootings.columns))
     ).mark_geoshape(
         stroke='lightgray',
         fill = 'transparent'
     ).encode(
         color = alt.Color(
-            'Shootings per 100K habitants:Q', 
+            'Shootings per 100K habitants:Q',
             legend=alt.Legend(
                 title="Shootings per 100K habitants",
-                titleColor='black', 
+                titleColor='black',
                 labelColor='black')
         ),
         tooltip = ['County:N', 'Shootings per 100K habitants:Q'],
     ).properties(
         title = alt.TitleParams(
             text = 'Distribution of shootings per 100k habitants, by county',
-            fontSize = 24,
+            fontSize = 18,
             color = 'black'),
         width = 600,
         height = 400
@@ -315,15 +336,7 @@ def second_question(mass_shootings, county_population, counties_gdf):
         type = 'albersUsa'
     )
 
-    county_shootings_choropleth = county_shootings_map + state_shape_overlay + county_shootings_overlay
-
-    # plotting by State and County side by side 
-    state_plot, county_plot = st.columns(2)
-    with state_plot: 
-        st.altair_chart(state_shootings_complete)
-    with county_plot:
-        st.altair_chart(county_shootings_choropleth)
-
+    Q2_county_map_final = county_shootings_map + state_shape_overlay + county_shootings_overlay
     
 
 
@@ -331,21 +344,27 @@ def second_question(mass_shootings, county_population, counties_gdf):
 
     #--------------- CHOROPLETH PLOTTING ---------------#
 
-    suspects_injured_map = alt.Chart(USA_states
+    Qextra_injured_map_final = alt.Chart(USA_states
     ).transform_lookup(
         lookup = 'id',
-        from_ = alt.LookupData(state_shootings, 'FIPS', list(state_shootings.columns)) 
+        from_ = alt.LookupData(state_shootings, 'FIPS', list(state_shootings.columns))
     ).mark_geoshape(stroke='darkgray'
     ).encode(
-        color = alt.Color('% of Suspects Injured:Q', legend=alt.Legend(
-                title="Shootings per 100K habitants",
-                titleColor='black', 
-                labelColor='black')).scale(scheme = 'lighttealblue'),
+        color=alt.Color(
+        'Shootings per 1M Habitants:Q',
+        legend=alt.Legend(
+            title='Shootings per 1M Habitants',
+            titleColor='black',
+            labelColor='black',
+            orient='bottom'
+        ),
+        scale=alt.Scale(scheme='lighttealblue')
+    ),
         tooltip = ['State:N', '% of Suspects Injured:Q']
     ).properties(
         title = alt.TitleParams(
             text = 'Percentage of Suspects Injured per shooting, by state',
-            fontSize = 24,
+            fontSize = 18,
             color = 'black'),
         width = 600,
         height = 400
@@ -354,21 +373,27 @@ def second_question(mass_shootings, county_population, counties_gdf):
     )
 
 
-    suspects_killed_map = alt.Chart(USA_states
+    Qextra_killed_map_final = alt.Chart(USA_states
     ).transform_lookup(
         lookup = 'id',
-        from_ = alt.LookupData(state_shootings, 'FIPS', list(state_shootings.columns)) 
+        from_ = alt.LookupData(state_shootings, 'FIPS', list(state_shootings.columns))
     ).mark_geoshape(stroke='darkgray'
     ).encode(
-        color = alt.Color('% of Suspects Killed:Q', legend=alt.Legend(
-                title="Shootings per 100K habitants",
-                titleColor='black', 
-                labelColor='black')).scale(scheme = 'lighttealblue'),
+        color=alt.Color(
+        'Shootings per 1M Habitants:Q',
+        legend=alt.Legend(
+            title='Shootings per 1M Habitants',
+            titleColor='black',
+            labelColor='black',
+            orient='bottom'
+        ),
+        scale=alt.Scale(scheme='lighttealblue')
+    ),
         tooltip = ['State:N', '% of Suspects Killed:Q']
     ).properties(
         title = alt.TitleParams(
             text = 'Percentage of suspects killed per shooting, by state',
-            fontSize = 24,
+            fontSize = 18,
             color = 'black'),
         width = 600,
         height = 400
@@ -376,11 +401,7 @@ def second_question(mass_shootings, county_population, counties_gdf):
         type = 'albersUsa'
     )
 
-    injured_plot, killed_plot = st.columns(2)
-    with injured_plot: 
-        st.altair_chart(suspects_injured_map)
-    with killed_plot:
-        st.altair_chart(suspects_killed_map)
+    return Q2_state_map_final, Q2_county_map_final, Qextra_injured_map_final, Qextra_killed_map_final
 
 
 ############# QUESTION 3 #############
@@ -407,6 +428,7 @@ def third_question(mass_shootings, school_incidents):
     
 
     #--------------- SCATTER PLOT PLOTTING ---------------#
+
     scatter_plot = alt.Chart(total_count).mark_circle(color='#1f78b4').encode(
         alt.X('Ratio Mass Shootings:Q', title = "Mass Shootings per million citizens", axis = alt.Axis(titleColor = 'black', labelColor = 'black', titleFontSize = 14, labelFontSize = 12)),
         alt.Y('Ratio School Incidents:Q', title = "School Incidents per million citizens", axis = alt.Axis(titleColor = 'black', labelColor = 'black', titleFontSize = 14, labelFontSize = 12)),
@@ -414,23 +436,25 @@ def third_question(mass_shootings, school_incidents):
     ).properties(
         title = alt.TitleParams(
             text = 'Relationship Between Mass Shootings and School Incidents',
-            fontSize = 24,
+            fontSize = 18,
             color = 'black'),
-        width=600,
-        height=400
+        width = 600,
+        height = 400
     )
-    
-    linear_regression = scatter_plot.transform_regression( 
-        'Ratio Mass Shootings', 
-        'Ratio School Incidents' 
+
+    linear_regression = scatter_plot.transform_regression(
+        'Ratio Mass Shootings',
+        'Ratio School Incidents'
     ).mark_line(color ='#a6cee3')
 
-    return scatter_plot + linear_regression
+    Q3_scatterplot_final = scatter_plot + linear_regression
+
+    return Q3_scatterplot_final
 
 
 
 ############# QUESTION 4 #############
-def fourth_question(mass_shootings, school_incidents, regression_plot):
+def fourth_question(mass_shootings):
     """" Line chart to show the mass shootings envolved the last years in the USA"""
 
     #--------------- DATA PREPARATION ---------------#
@@ -460,12 +484,12 @@ def fourth_question(mass_shootings, school_incidents, regression_plot):
     ).properties(
         title = alt.TitleParams(
             text = 'Mass shootings during the last four years in the USA',
-            fontSize = 24,
+            fontSize = 18,
             color = 'black'),
             width = 600,
             height = 400
     )
-    
+
     max_point_chart = alt.Chart(max_point).mark_point(
         size = 170, color = '#d95f02', filled = True, shape = 'triangle-up'
     ).encode(
@@ -511,15 +535,9 @@ def fourth_question(mass_shootings, school_incidents, regression_plot):
         mean_value = str(mean_value)
     )
 
-    complete_chart = shootings_linechart + max_point_chart + min_point_chart + mean_line + mean_text + max_text + min_text
+    Q4_linechart_final = shootings_linechart + max_point_chart + min_point_chart + mean_line + mean_text + max_text + min_text
 
-    relation_plot, line_plot = st.columns(2)
-    with relation_plot: 
-        st.altair_chart(regression_plot)
-    with line_plot:
-        st.altair_chart(complete_chart)
-    
-
+    return Q4_linechart_final
 
 
 
@@ -530,14 +548,34 @@ def main():
     school_incidents = pd.read_csv('SchoolIncidents.csv')
 
     st.set_page_config(layout = 'wide')
-    st.title('Analysis of Mass Shootings in the US')
+    st.markdown('##  Analysis of Mass Shootings in the US')
     st.markdown('**Authors:** Raquel Jolis Carné and Martina Massana Massip')
-    st.divider()
 
-    first_question(mass_shootings)
-    second_question(mass_shootings, county_population, counties_gdf)
-    regression_plot = third_question(mass_shootings, school_incidents)
-    fourth_question(mass_shootings, school_incidents, regression_plot)
+    Q1_barchart_final = first_question(mass_shootings)
+    Q2_state_map_final, Q2_county_map_final, Qextra_injured_map_final, Qextra_killed_map_final = second_question(mass_shootings, county_population, counties_gdf)
+    Q3_scatterplot_final = third_question(mass_shootings, school_incidents)
+    Q4_linechart_final = fourth_question(mass_shootings)
+
+    barchart, linechart = st.columns(2)
+    with barchart: 
+        st.altair_chart(Q1_barchart_final)
+    with linechart:
+        st.altair_chart(Q4_linechart_final)
+
+    state_plot, county_plot = st.columns(2)
+    with state_plot: 
+        st.altair_chart(Q2_state_map_final)
+    with county_plot:
+        st.altair_chart(Q2_county_map_final)
+    
+    injured_plot, killed_plot = st.columns(2)
+    with injured_plot: 
+        st.altair_chart(Qextra_injured_map_final)
+    with killed_plot:
+        st.altair_chart(Qextra_killed_map_final)
+
+    st.altair_chart(Q3_scatterplot_final)
+    
 
 if __name__ =="__main__":
     main()
