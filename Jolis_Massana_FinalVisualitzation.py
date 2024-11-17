@@ -39,6 +39,7 @@ def first_question(mass_shootings):
 
     # sort state values in descending order
     state_shootings = state_shootings.sort_values(by = 'Shootings per 1M Habitants', ascending = False).reset_index(drop = True)
+    state_shootings['Top_State'] = state_shootings.index < 1
     state_shootings['Top_10'] = state_shootings.index < 10
 
 
@@ -47,7 +48,11 @@ def first_question(mass_shootings):
     shootings_bars = alt.Chart(state_shootings).mark_bar().encode(
         alt.X('Shootings per 1M Habitants:Q', axis = alt.Axis(titleColor = 'black', labelColor = 'black', titleFontSize = 14, labelFontSize = 12)),
         alt.Y('State:N', sort='-x', axis = alt.Axis(titleColor = 'black', labelColor = 'black', titleFontSize = 14, labelFontSize = 12)),
-        color = alt.Color('Shootings per 1M Habitants:Q', scale = alt.Scale(scheme='lighttealblue'), legend = None),
+        color = alt.condition(
+            alt.datum.Top_State,
+            alt.value('#1B4264'), 
+            alt.value('#C4C9CB')  
+        ),
         order = alt.Order('Shootings per 1M Habitants', sort = 'descending')
     ).transform_filter(
         alt.datum.Top_10 == True
@@ -168,10 +173,12 @@ def second_question(mass_shootings, county_population, counties_gdf):
 
     columbia_zoom = alt.Chart(columbia_data).mark_circle(
         size = 50,
-        opacity = 0.7
+        opacity = 0.9
     ).encode(
-        color = alt.Color('State:N', scale=alt.Scale(scheme = 'reds'),
-                        legend=alt.Legend(labelColor='black', titleColor='black')),
+        color = alt.Color('State:N', scale = alt.Scale(
+            domain = ['District of Columbia'],  
+            range = ['#1b4264']  
+        ), legend = alt.Legend(labelColor = 'black', titleColor = 'black')),
         longitude = 'Longitude:Q',
         latitude = 'Latitude:Q',
         tooltip = ['State:N', 'Shootings per 1M Habitants:Q']
