@@ -47,7 +47,7 @@ def first_question(mass_shootings):
     shootings_bars = alt.Chart(state_shootings).mark_bar().encode(
         alt.X('Shootings per 1M Habitants:Q', axis = alt.Axis(titleColor = 'black', labelColor = 'black', titleFontSize = 14, labelFontSize = 12)),
         alt.Y('State:N', sort='-x', axis = alt.Axis(titleColor = 'black', labelColor = 'black', titleFontSize = 14, labelFontSize = 12)),
-        color = alt.value('#1f78b4'),
+        color = alt.Color('Shootings per 1M Habitants:Q', scale = alt.Scale(scheme='lighttealblue'), legend = None),
         order = alt.Order('Shootings per 1M Habitants', sort = 'descending')
     ).transform_filter(
         alt.datum.Top_10 == True
@@ -56,10 +56,8 @@ def first_question(mass_shootings):
         fontSize = 18,
         color = 'black',
         offset = 12.5)
-    ).properties(
-        width = 600,
-        height = 400
     )
+
 
     shootings_text = alt.Chart(state_shootings).mark_text(
         align = 'left', baseline = 'middle', dx = 3, color = 'black', fontSize = 12
@@ -69,13 +67,14 @@ def first_question(mass_shootings):
         alt.Text('Shootings per 1M Habitants:Q', format='.2f')
     ).transform_filter(
         alt.datum.Top_10 == True
-    ).properties(
-        width = 600,
-        height = 400
     )
 
-    Q1_barchart_final = shootings_bars + shootings_text
-    
+    Q1_barchart_final = alt.layer(shootings_bars, shootings_text).properties(
+        autosize='fit',   
+        width='container', 
+        height = 800         
+    )
+
     return Q1_barchart_final
 
 
@@ -143,7 +142,7 @@ def second_question(mass_shootings, county_population, counties_gdf):
                 title='Shootings per 1M Habitants',
                 titleColor='black',
                 labelColor='black',
-                orient='bottom'
+                orient='top'
             ),
             scale=alt.Scale(scheme='lighttealblue')
         ),
@@ -152,9 +151,7 @@ def second_question(mass_shootings, county_population, counties_gdf):
         title = alt.TitleParams(
             text = 'Distribution of shootings per million habitants, by state',
             fontSize = 18,
-            color = 'black'),
-        width = 600,
-        height = 400
+            color = 'black')
     ).project(
         type = 'albersUsa'
     )
@@ -173,16 +170,17 @@ def second_question(mass_shootings, county_population, counties_gdf):
         opacity = 0.7
     ).encode(
         color = alt.Color('State:N', scale=alt.Scale(scheme = 'reds'),
-                        legend=alt.Legend(labelColor='black', titleColor='black', orient='bottom')),
+                        legend=alt.Legend(labelColor='black', titleColor='black', orient='top')),
         longitude = 'Longitude:Q',
         latitude = 'Latitude:Q',
         tooltip = ['State:N', 'Shootings per 1M Habitants:Q']
-    ).properties(
-        width = 600,
-        height = 400
     )
 
-    Q2_state_map_final = state_shootings_map + columbia_zoom
+    Q2_state_map_final = alt.layer(state_shootings_map, columbia_zoom).properties(
+        autosize='fit',   
+        width='container', 
+        height = 450         
+    )
 
 
     ############# SHOOTINGS PER COUNTIES #############
@@ -276,10 +274,11 @@ def second_question(mass_shootings, county_population, counties_gdf):
         color = alt.Color(
             'Shootings per 100K habitants:Q',
             legend=alt.Legend(
-                title='Shootings per 100K habitants',
+                title='Shootings per 100K Habitants',
                 titleColor='black',
                 labelColor='black',
-                orient='bottom'
+                labelLimit=500,
+                orient='top'
             ),
             scale=alt.Scale(scheme='lighttealblue')
         ),
@@ -288,9 +287,7 @@ def second_question(mass_shootings, county_population, counties_gdf):
         title = alt.TitleParams(
             text = 'Distribution of shootings per 100k habitants, by county',
             fontSize = 18,
-            color = 'black'),
-        width = 600,
-        height = 400
+            color = 'black')
     ).project(
         type = 'albersUsa'
     )
@@ -302,9 +299,6 @@ def second_question(mass_shootings, county_population, counties_gdf):
     ).mark_geoshape(
         stroke = 'gray',
         fill = 'transparent'
-    ).properties(
-        width = 600,
-        height = 400
     ).project(
         type = 'albersUsa'
     )
@@ -329,14 +323,17 @@ def second_question(mass_shootings, county_population, counties_gdf):
         title = alt.TitleParams(
             text = 'Distribution of shootings per 100k habitants, by county',
             fontSize = 18,
-            color = 'black'),
-        width = 600,
-        height = 400
+            color = 'black')
     ).project(
         type = 'albersUsa'
     )
 
-    Q2_county_map_final = county_shootings_map + state_shape_overlay + county_shootings_overlay
+
+    Q2_county_map_final = alt.layer(county_shootings_map, state_shape_overlay, county_shootings_overlay).properties(
+        autosize='fit',   
+        width='container', 
+        height = 450         
+    )
     
 
 
@@ -351,12 +348,12 @@ def second_question(mass_shootings, county_population, counties_gdf):
     ).mark_geoshape(stroke='darkgray'
     ).encode(
         color=alt.Color(
-        'Shootings per 1M Habitants:Q',
+        '% of Suspects Injured:Q',
         legend=alt.Legend(
-            title='Shootings per 1M Habitants',
+            title= '% of Suspects Injured',
             titleColor='black',
             labelColor='black',
-            orient='bottom'
+            orient='top'
         ),
         scale=alt.Scale(scheme='lighttealblue')
     ),
@@ -366,8 +363,9 @@ def second_question(mass_shootings, county_population, counties_gdf):
             text = 'Percentage of Suspects Injured per shooting, by state',
             fontSize = 18,
             color = 'black'),
-        width = 600,
-        height = 400
+        autosize='fit',
+        width='container',
+        height = 450
     ).project(
         type = 'albersUsa'
     )
@@ -380,12 +378,12 @@ def second_question(mass_shootings, county_population, counties_gdf):
     ).mark_geoshape(stroke='darkgray'
     ).encode(
         color=alt.Color(
-        'Shootings per 1M Habitants:Q',
+        '% of Suspects Killed:Q',
         legend=alt.Legend(
-            title='Shootings per 1M Habitants',
+            title= '% of Suspects Killed',
             titleColor='black',
             labelColor='black',
-            orient='bottom'
+            orient='top'
         ),
         scale=alt.Scale(scheme='lighttealblue')
     ),
@@ -395,8 +393,9 @@ def second_question(mass_shootings, county_population, counties_gdf):
             text = 'Percentage of suspects killed per shooting, by state',
             fontSize = 18,
             color = 'black'),
-        width = 600,
-        height = 400
+        autosize='fit',
+        width='container',
+        height = 450
     ).project(
         type = 'albersUsa'
     )
@@ -437,9 +436,7 @@ def third_question(mass_shootings, school_incidents):
         title = alt.TitleParams(
             text = 'Relationship Between Mass Shootings and School Incidents',
             fontSize = 18,
-            color = 'black'),
-        width = 600,
-        height = 400
+            color = 'black')
     )
 
     linear_regression = scatter_plot.transform_regression(
@@ -447,7 +444,11 @@ def third_question(mass_shootings, school_incidents):
         'Ratio School Incidents'
     ).mark_line(color ='#a6cee3')
 
-    Q3_scatterplot_final = scatter_plot + linear_regression
+    Q3_scatterplot_final = alt.layer(scatter_plot, linear_regression).properties(
+        autosize='fit',   
+        width='container', 
+        height = 400         
+    )
 
     return Q3_scatterplot_final
 
@@ -485,9 +486,7 @@ def fourth_question(mass_shootings):
         title = alt.TitleParams(
             text = 'Mass shootings during the last four years in the USA',
             fontSize = 18,
-            color = 'black'),
-            width = 600,
-            height = 400
+            color = 'black')
     )
 
     max_point_chart = alt.Chart(max_point).mark_point(
@@ -535,7 +534,12 @@ def fourth_question(mass_shootings):
         mean_value = str(mean_value)
     )
 
-    Q4_linechart_final = shootings_linechart + max_point_chart + min_point_chart + mean_line + mean_text + max_text + min_text
+    
+    Q4_linechart_final = alt.layer(shootings_linechart, max_point_chart, min_point_chart, mean_line, mean_text, max_text, min_text).properties(
+        autosize='fit',   
+        width='container', 
+        height = 400         
+    )
 
     return Q4_linechart_final
 
@@ -556,25 +560,24 @@ def main():
     Q3_scatterplot_final = third_question(mass_shootings, school_incidents)
     Q4_linechart_final = fourth_question(mass_shootings)
 
-    barchart, linechart = st.columns(2)
-    with barchart: 
-        st.altair_chart(Q1_barchart_final)
-    with linechart:
-        st.altair_chart(Q4_linechart_final)
-
     state_plot, county_plot = st.columns(2)
     with state_plot: 
-        st.altair_chart(Q2_state_map_final)
+        st.altair_chart(Q2_state_map_final, use_container_width=True)
     with county_plot:
-        st.altair_chart(Q2_county_map_final)
+        st.altair_chart(Q2_county_map_final, use_container_width=True)
     
+    barchart, linechart_scatterplot = st.columns([1, 1.2])
+    with barchart: 
+        st.altair_chart(Q1_barchart_final, use_container_width=True)
+    with linechart_scatterplot:
+        st.altair_chart(Q4_linechart_final, use_container_width=True)
+        st.altair_chart(Q3_scatterplot_final, use_container_width=True)
+
     injured_plot, killed_plot = st.columns(2)
     with injured_plot: 
-        st.altair_chart(Qextra_injured_map_final)
+        st.altair_chart(Qextra_injured_map_final, use_container_width=True)
     with killed_plot:
-        st.altair_chart(Qextra_killed_map_final)
-
-    st.altair_chart(Q3_scatterplot_final)
+        st.altair_chart(Qextra_killed_map_final, use_container_width=True)
     
 
 if __name__ =="__main__":
