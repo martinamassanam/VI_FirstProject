@@ -55,6 +55,7 @@ def first_question(mass_shootings):
         text = 'Top 10 States with most mass shootings per 1M habitants',
         fontSize = 18,
         color = 'black',
+        fontWeight='bold',
         offset = 12.5)
     )
 
@@ -72,7 +73,7 @@ def first_question(mass_shootings):
     Q1_barchart_final = alt.layer(shootings_bars, shootings_text).properties(
         autosize='fit',   
         width='container', 
-        height = 800         
+        height = 810         
     )
 
     return Q1_barchart_final
@@ -142,7 +143,6 @@ def second_question(mass_shootings, county_population, counties_gdf):
                 title='Shootings per 1M Habitants',
                 titleColor='black',
                 labelColor='black',
-                orient='top'
             ),
             scale=alt.Scale(scheme='lighttealblue')
         ),
@@ -151,6 +151,7 @@ def second_question(mass_shootings, county_population, counties_gdf):
         title = alt.TitleParams(
             text = 'Distribution of shootings per million habitants, by state',
             fontSize = 18,
+            fontWeight='bold',
             color = 'black')
     ).project(
         type = 'albersUsa'
@@ -170,7 +171,7 @@ def second_question(mass_shootings, county_population, counties_gdf):
         opacity = 0.7
     ).encode(
         color = alt.Color('State:N', scale=alt.Scale(scheme = 'reds'),
-                        legend=alt.Legend(labelColor='black', titleColor='black', orient='top')),
+                        legend=alt.Legend(labelColor='black', titleColor='black')),
         longitude = 'Longitude:Q',
         latitude = 'Latitude:Q',
         tooltip = ['State:N', 'Shootings per 1M Habitants:Q']
@@ -179,7 +180,7 @@ def second_question(mass_shootings, county_population, counties_gdf):
     Q2_state_map_final = alt.layer(state_shootings_map, columbia_zoom).properties(
         autosize='fit',   
         width='container', 
-        height = 450         
+        height = 400         
     )
 
 
@@ -278,7 +279,6 @@ def second_question(mass_shootings, county_population, counties_gdf):
                 titleColor='black',
                 labelColor='black',
                 labelLimit=500,
-                orient='top'
             ),
             scale=alt.Scale(scheme='lighttealblue')
         ),
@@ -287,6 +287,7 @@ def second_question(mass_shootings, county_population, counties_gdf):
         title = alt.TitleParams(
             text = 'Distribution of shootings per 100k habitants, by county',
             fontSize = 18,
+            fontWeight='bold',
             color = 'black')
     ).project(
         type = 'albersUsa'
@@ -323,6 +324,7 @@ def second_question(mass_shootings, county_population, counties_gdf):
         title = alt.TitleParams(
             text = 'Distribution of shootings per 100k habitants, by county',
             fontSize = 18,
+            fontWeight='bold',
             color = 'black')
     ).project(
         type = 'albersUsa'
@@ -332,7 +334,7 @@ def second_question(mass_shootings, county_population, counties_gdf):
     Q2_county_map_final = alt.layer(county_shootings_map, state_shape_overlay, county_shootings_overlay).properties(
         autosize='fit',   
         width='container', 
-        height = 450         
+        height = 400         
     )
     
 
@@ -362,6 +364,7 @@ def second_question(mass_shootings, county_population, counties_gdf):
         title = alt.TitleParams(
             text = 'Percentage of Suspects Injured per shooting, by state',
             fontSize = 18,
+            fontWeight='bold',
             color = 'black'),
         autosize='fit',
         width='container',
@@ -392,6 +395,7 @@ def second_question(mass_shootings, county_population, counties_gdf):
         title = alt.TitleParams(
             text = 'Percentage of suspects killed per shooting, by state',
             fontSize = 18,
+            fontWeight='bold',
             color = 'black'),
         autosize='fit',
         width='container',
@@ -436,6 +440,7 @@ def third_question(mass_shootings, school_incidents):
         title = alt.TitleParams(
             text = 'Relationship Between Mass Shootings and School Incidents',
             fontSize = 18,
+            fontWeight='bold',
             color = 'black')
     )
 
@@ -486,6 +491,7 @@ def fourth_question(mass_shootings):
         title = alt.TitleParams(
             text = 'Mass shootings during the last four years in the USA',
             fontSize = 18,
+            fontWeight='bold',
             color = 'black')
     )
 
@@ -559,20 +565,21 @@ def main():
     Q2_state_map_final, Q2_county_map_final, Qextra_injured_map_final, Qextra_killed_map_final = second_question(mass_shootings, county_population, counties_gdf)
     Q3_scatterplot_final = third_question(mass_shootings, school_incidents)
     Q4_linechart_final = fourth_question(mass_shootings)
-
-    state_plot, county_plot = st.columns(2)
-    with state_plot: 
-        st.altair_chart(Q2_state_map_final, use_container_width=True)
-    with county_plot:
-        st.altair_chart(Q2_county_map_final, use_container_width=True)
     
-    barchart, linechart_scatterplot = st.columns([1, 1.2])
+    barchart, spacer, maps = st.columns([1, 0.1, 1.2])
     with barchart: 
         st.altair_chart(Q1_barchart_final, use_container_width=True)
-    with linechart_scatterplot:
-        st.altair_chart(Q4_linechart_final, use_container_width=True)
-        st.altair_chart(Q3_scatterplot_final, use_container_width=True)
 
+    with maps:
+        st.altair_chart(Q2_state_map_final, use_container_width=True)
+        st.altair_chart(Q2_county_map_final, use_container_width=True)
+    
+    linechart, spacer, scatterplot = st.columns([1, 0.1, 1.2])
+    with linechart:
+        st.altair_chart(Q4_linechart_final, use_container_width=True)
+    with scatterplot:
+        st.altair_chart(Q3_scatterplot_final, use_container_width=True)
+    
     injured_plot, killed_plot = st.columns(2)
     with injured_plot: 
         st.altair_chart(Qextra_injured_map_final, use_container_width=True)
