@@ -581,7 +581,7 @@ def main():
         st.altair_chart(Q2_state_map_final, use_container_width=True)
         st.altair_chart(Q2_county_map_final, use_container_width=True)
     
-    linechart, spacer, scatterplot = st.columns([1, 0.1, 1.2])
+    linechart, spacer, scatterplot = st.columns([1.2, 0.1, 1])
     with linechart:
         st.altair_chart(Q4_linechart_final, use_container_width=True)
     with scatterplot:
